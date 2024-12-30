@@ -12,6 +12,7 @@ train_pipeline = [
     dict(type='RandomOBBRotate', rotate_after_flip=True,
          angles=(0, 0), vert_rate=1.),
     dict(type='Pad', size_divisor=32),
+    dict(type='FliterEmpty'),
     dict(type='Mask2OBB', obb_type='obb'),
     dict(type='OBBDefaultFormatBundle'),
     dict(type='OBBCollect', keys=['img', 'gt_bboxes', 'gt_obboxes', 'gt_labels'])
@@ -72,14 +73,21 @@ data = dict(
         type=dataset_type,
         xmltype='obb',
         imgset=data_root + 'ImageSets/Main/trainval.txt',
-        ann_file=data_root + 'Annotations/Oriented_Bounding_Boxes',
+        ann_file=data_root + 'Annotations/obb',
         img_prefix=data_root + 'JPEGImages-trainval/',
         pipeline=train_pipeline),
+    val=dict(
+        type=dataset_type,
+        xmltype='obb',
+        imgset=data_root + 'ImageSets/Main/test.txt',
+        ann_file=data_root + 'Annotations/obb',
+        img_prefix=data_root + 'JPEGImages-test/',
+        pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
         xmltype='obb',
         imgset=data_root + 'ImageSets/Main/test.txt',
-        ann_file=data_root + 'Annotations/Oriented_Bounding_Boxes',
+        ann_file=data_root + 'Annotations/obb',
         img_prefix=data_root + 'JPEGImages-test/',
         pipeline=test_pipeline))
 evaluation = dict(metric='mAP')

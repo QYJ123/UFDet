@@ -6,7 +6,6 @@ from mmcv.runner import save_checkpoint
 
 from mmdet.apis import init_detector
 
-
 def fuse_conv_bn(conv, bn):
     """ During inference, the functionary of batch norm layers is turned off
     but only the mean and var alone channels are used, which exposes the

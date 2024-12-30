@@ -1,8 +1,4 @@
-_base_ = [
-    '../_base_/datasets/hrsc.py',
-    '../_base_/schedules/schedule_3x.py',
-    '../../_base_/default_runtime.py'
-]
+_base_ = ['../../_base_/default_runtime.py']
 
 model = dict(
     type='OrientedRCNN',
@@ -33,7 +29,7 @@ model = dict(
         bbox_coder=dict(
             type='S3MidpointOffsetCoder',
             target_means=[.0, .0, .0, .0, .0],
-            target_stds=[0.25, 0.25, 0.82, 0.82, 0.82]),
+            target_stds=[0.25, 0.25, 0.8, 0.8, 0.8]),
         loss_cls=dict(
             type='CrossEntropyLoss', use_sigmoid=True, loss_weight=1.0),
         loss_bbox=dict(type='SmoothL1AJLoss', beta=1.0/9.0, loss_weight=1.0)),
@@ -63,12 +59,12 @@ model = dict(
                 loss_weight=1.0),
             loss_bbox=dict(type='SmoothL1AJLoss', beta=1.0,
                            loss_weight=1.0))))
-# model training and testing settings
+
 train_cfg = dict(
     rpn=dict(
         assigner=dict(
             type='MaxIoUAssigner',
-            pos_iou_thr=0.56,
+            pos_iou_thr=0.54,
             neg_iou_thr=0.3,
             min_pos_iou=0.3,
             match_low_quality=True,
@@ -118,3 +114,73 @@ test_cfg = dict(
     rcnn=dict(
         score_thr=0.05, nms=dict(type='obb_nms', iou_thr=0.1), max_per_img=2000))
 
+dataset_type = 'HRSCDataset'
+data_root = 'data/hrsc/'
+img_norm_cfg = dict(
+    mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
+train_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(type='LoadOBBAnnotations', with_bbox=True,
+         with_label=True, with_poly_as_mask=True),
+    dict(type='Resize', img_scale=(1333, 800), keep_ratio=True),
+    dict(type='OBBRandomFlip', h_flip_ratio=0.5, v_flip_ratio=0.5),
+    dict(type='Normalize', **img_norm_cfg),
+    dict(type='RandomOBBRotate', rotate_after_flip=True,
+         angles=(0, 90), vert_rate=0.5),
+    dict(type='Pad', size_divisor=32),
+    dict(type='Mask2OBB', obb_type='obb'),
+    dict(type='OBBDefaultFormatBundle'),
+    dict(type='OBBCollect', keys=['img', 'gt_bboxes', 'gt_obboxes', 'gt_labels'])
+]
+test_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(
+        type='MultiScaleFlipRotateAug',
+        img_scale=[(1333, 800)],
+        h_flip=False,
+        v_flip=False,
+        rotate=False,
+        transforms=[
+            dict(type='Resize', keep_ratio=True),
+            dict(type='OBBRandomFlip'),
+            dict(type='Normalize', **img_norm_cfg),
+            dict(type='RandomOBBRotate', rotate_after_flip=True),
+            dict(type='Pad', size_divisor=32),
+            dict(type='ImageToTensor', keys=['img']),
+            dict(type='OBBCollect', keys=['img']),
+        ])
+]
+
+data = dict(
+    samples_per_gpu=2,
+    workers_per_gpu=4,
+    train=dict(
+        type=dataset_type,
+        imgset=data_root + 'ImageSets/trainval.txt',
+        ann_file=data_root + 'FullDataSet/Annotations/',
+        img_prefix=data_root + 'FullDataSet/AllImages/',
+        pipeline=train_pipeline),
+    val=dict(
+        type=dataset_type,
+        imgset=data_root + 'ImageSets/test.txt',
+        ann_file=data_root + 'FullDataSet/Annotations/',
+        img_prefix=data_root + 'FullDataSet/AllImages/',
+        pipeline=test_pipeline),
+    test=dict(
+        type=dataset_type,
+        imgset=data_root + 'ImageSets/test.txt',
+        ann_file=data_root + 'FullDataSet/Annotations/',
+        img_prefix=data_root + 'FullDataSet/AllImages/',
+        pipeline=test_pipeline))
+evaluation = dict(metric='mAP')
+# optimizer
+optimizer = dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0001)
+optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
+# learning policy
+lr_config = dict(
+    policy='step',
+    warmup='linear',
+    warmup_iters=500,
+    warmup_ratio=0.001,
+    step=[36, 44])
+total_epochs = 48

@@ -8,8 +8,8 @@ from .pafpn import PAFPN
 from .rfp import RFP
 
 from .msfpn import MSFPN
-
+from .mffsfpn import MFFSFPN
 __all__ = [
     'FPN', 'BFP', 'HRFPN', 'NASFPN', 'FPN_CARAFE', 'PAFPN', 'NASFCOS_FPN',
-    'RFP','MSFPN'
+    'RFP','MSFPN','MFFSFPN'
 ]

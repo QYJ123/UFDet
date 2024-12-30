@@ -8,6 +8,8 @@ from mmdet.core import eval_arb_map, eval_arb_recalls
 from ..builder import DATASETS
 from ..custom import CustomDataset
 
+from mmcv import print_log
+#from collection import OrderedDict
 
 @DATASETS.register_module()
 class DIORDataset(CustomDataset):
@@ -78,11 +80,11 @@ class DIORDataset(CustomDataset):
                  results,
                  metric='mAP',
                  logger=None,
-                 iou_thr=0.5,
+                 iou_thr=0.5,#np.linspace(0.5, 0.95, 10),
                  scale_ranges=None,
                  use_07_metric=True,
                  proposal_nums=(100, 300, 1000)):
-
+        #np.linspace(0.5, 0.95, 10)[0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95]
         if not isinstance(metric, str):
             assert len(metric) == 1
             metric = metric[0]
@@ -91,17 +93,40 @@ class DIORDataset(CustomDataset):
             raise KeyError(f'metric {metric} is not supported')
         annotations = [self.get_ann_info(i) for i in range(len(self))]
         eval_results = {}
+        mean_mAP50_95 = []
         if metric == 'mAP':
-            assert isinstance(iou_thr, float)
-            mean_ap, _ = eval_arb_map(
-                results,
-                annotations,
-                scale_ranges=scale_ranges,
-                iou_thr=iou_thr,
-                use_07_metric=use_07_metric,
-                dataset=self.CLASSES,
-                logger=logger)
-            eval_results['mAP'] = mean_ap
+            if isinstance(iou_thr, float):
+                mean_ap, _ = eval_arb_map(
+                    results,
+                    annotations,
+                    scale_ranges=scale_ranges,
+                    iou_thr=iou_thr,
+                    use_07_metric=use_07_metric,
+                    dataset=self.CLASSES,
+                    logger=logger)
+                eval_results['mAP'] = mean_ap
+            else:
+                #eval_results = OrderedDict()
+                mean_aps = []
+                
+                for iou in iou_thr:
+                    print_log(f'\n{"-" * 15}iou_thr: {iou}{"-" * 15}')
+                    mean_ap, _ = eval_arb_map(
+                    results,
+                    annotations,
+                    scale_ranges=scale_ranges,
+                    iou_thr=iou,
+                    use_07_metric=use_07_metric,
+                    dataset=self.CLASSES,
+                    logger=logger)
+                    mean_aps.append(mean_ap)
+                    eval_results[f'AP{int(iou * 100):02d}'] = round(mean_ap, 3)
+                    eval_results['mAP'] = sum(mean_aps) / len(mean_aps)
+                    mean_mAP50_95.append(round(mean_ap,4))
+                print(mean_mAP50_95)
+                print('mAP75:{}'.format(mean_mAP50_95[5]))
+                print('mAP50:95:{}'.format(sum(mean_mAP50_95) / len(mean_mAP50_95)) )
+                #eval_results.move_to_end('mAP', last=False)
         elif metric == 'recall':
             gt_bboxes = [ann['bboxes'] for ann in annotations]
             if isinstance(iou_thr, float):

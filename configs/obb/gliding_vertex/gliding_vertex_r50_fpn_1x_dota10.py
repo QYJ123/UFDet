@@ -51,6 +51,7 @@ model = dict(
             fc_out_channels=1024,
             num_classes=15,
             ratio_thr=0.8,
+            ratio_on=False,
             bbox_coder=dict(
                 type='DeltaXYWHBBoxCoder',
                 target_means=[0., 0., 0., 0.],

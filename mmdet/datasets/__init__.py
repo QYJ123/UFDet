@@ -12,6 +12,7 @@ from .wider_face import WIDERFaceDataset
 from .xml_style import XMLDataset
 
 from .obb.dota import DOTADataset
+from .obb.dota2 import DOTA2Dataset
 from .obb.dior import DIORDataset
 from .obb.hrsc import HRSCDataset
 from .obb.msra_td500 import MSRATD500Dataset

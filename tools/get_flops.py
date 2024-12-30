@@ -2,7 +2,7 @@ import argparse
 
 import torch
 from mmcv import Config
-
+from calflops import calculate_flops
 from mmdet.models import build_detector
 
 try:
@@ -56,7 +56,9 @@ def main():
     print('!!!Please be cautious if you use the results in papers. '
           'You may need to check if all ops are supported and verify that the '
           'flops computation is correct.')
-
+    a=(1,)
+    flops1,macs1,params1 = calculate_flops(model=model, input_shape=a+input_shape,output_as_string=True,output_precision=4)
+    print(flops1,macs1,params1)
 
 if __name__ == '__main__':
     main()

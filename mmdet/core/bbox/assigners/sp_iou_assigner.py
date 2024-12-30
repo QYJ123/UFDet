@@ -22,6 +22,19 @@ def AspectRatio(gt_rbboxes):
     
     return ratios
 
+def error_d(gt_bboxes, pred_bboxes):
+    """Compute the aspect ratio of all gts.
+
+    Args:
+        gt_rbboxes (torch.Tensor): Groundtruth shape (k, 5).
+
+    Returns:
+        error_d: sqrt(delta_x^2+delta_y^2)+error(angle)
+    """
+    error_x = gt_bboxes[..., 0].unsqueeze(1)-(pred_bboxes[..., 0].unsqueeze(1)).T
+    error_y = gt_bboxes[..., 1].unsqueeze(1)-(pred_bboxes[..., 1].unsqueeze(1)).T
+    er_d = (error_x**2+error_y**2).sqrt()
+    return (-er_d/32).exp()
 @BBOX_ASSIGNERS.register_module()
 class SPIoUAssigner(BaseAssigner):
     """Assign a corresponding gt bbox or background to each bbox.
@@ -118,8 +131,10 @@ class SPIoUAssigner(BaseAssigner):
             if gt_labels is not None:
                 gt_labels = gt_labels.cpu()
 
-        overlaps = self.iou_calculator(gt_bboxes, bboxes)
+        overlaps = (self.iou_calculator(gt_bboxes, bboxes)+0.2*error_d(gt_bboxes, bboxes))/1.2
         
+        ##new revisied
+        #overlaps = self.iou_calculator(gt_bboxes, bboxes)+error_d(gt_bboxes, bboxes)
         if (self.ignore_iof_thr > 0 and gt_bboxes_ignore is not None
                 and gt_bboxes_ignore.numel() > 0 and bboxes.numel() > 0):
             if self.ignore_wrt_candidates:
@@ -187,7 +202,7 @@ class SPIoUAssigner(BaseAssigner):
         
         max_a_r = 69
         s_value = 1
-        f_value = 0.8
+        f_value = 0.75
         #iou_thr_weight = s_value+(gt_bboxes_ratios-1)*(s_value-f_value)/(1-max_a_r)
         #k0 = (max_a_r-1)/max_a_r/(np.log(s_value/f_value))
         #iou_thr_weight = ( -(gt_bboxes_ratios[argmax_overlaps]-1)/k0/max_a_r).exp()*s_value
@@ -196,8 +211,8 @@ class SPIoUAssigner(BaseAssigner):
         #positive function
         #iou_thr_weight = s_value+(f_value-s_value)/((max_a_r-1)**4)*(gt_bboxes_ratios[argmax_overlaps]-1)**4
         #negative function
-        iou_thr_weight = f_value+(s_value-f_value)/((max_a_r-1)**3)*(max_a_r-gt_bboxes_ratios[argmax_overlaps])**3
-        
+        #iou_thr_weight = f_value+(s_value-f_value)/((max_a_r-1)**3)*(max_a_r-gt_bboxes_ratios[argmax_overlaps])**3
+        iou_thr_weight = (f_value/(1-f_value)+(-(gt_bboxes_ratios[argmax_overlaps]-1)/20).exp())/(1+f_value/(1-f_value))
        
         iou_thr_weight = iou_thr_weight
      

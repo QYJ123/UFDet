@@ -21,6 +21,7 @@ class GVBBoxHead(nn.Module):
                  num_classes=15,
                  reg_class_agnostic=False,
                  ratio_thr=0.8,
+                 ratio_on = True,
                  bbox_coder=dict(
                      type='DeltaXYWHBBoxCoder',
                      target_means=[0., 0., 0., 0.],
@@ -51,7 +52,7 @@ class GVBBoxHead(nn.Module):
         self.fp16_enabled = False
         self.start_bbox_type = 'hbb'
         self.end_bbox_type = 'poly'
-
+        self.ratio_on=ratio_on
         self.bbox_coder = build_bbox_coder(bbox_coder)
         self.fix_coder = build_bbox_coder(fix_coder)
         self.ratio_coder = build_bbox_coder(ratio_coder)

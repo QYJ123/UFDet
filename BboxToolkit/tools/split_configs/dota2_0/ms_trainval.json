@@ -6,8 +6,8 @@
         "data/DOTA2_0/val/images/"
     ],
     "ann_dirs": [
-        "data/DOTA2_0/train/labelTxt/",
-        "data/DOTA2_0/val/labelTxt/"
+        "data/DOTA2_0/train/labelTxt-v2.0/DOTA-v2.0_train/",
+        "data/DOTA2_0/val/labelTxt-v2.0/DOTA-v2.0_val/"
     ],
     "classes": null,
     "prior_annfile": null,

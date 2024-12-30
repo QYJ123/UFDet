@@ -14,7 +14,9 @@ import os.path as osp
 from math import ceil
 from functools import partial, reduce
 from multiprocessing import Pool, Manager
-
+from PIL import ImageFile,Image
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+Image.MAX_IMAGE_PIXELS = None
 
 def add_parser(parser):
     #argument for processing
@@ -236,6 +238,9 @@ def setup_logger(log_path):
 
 def main():
     args = parse_args()
+
+    #print(args.load_type,args.classes)
+    #input()
 
     if args.ann_dirs is None:
         args.ann_dirs = [None for _ in range(len(args.img_dirs))]
